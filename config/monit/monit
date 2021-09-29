@@ -1,0 +1,8 @@
+# This file should be linked to /etc/monit/conf-enabled/monit
+
+set httpd unixsocket /var/run/monit.sock and
+    uid www-data
+    gid www-data
+    # use address localhost  # only accept connection from localhost
+    allow localhost          # allow localhost to connect to the server and
+    allow admin:monit        # require user 'admin' with password 'monit'

@@ -1,0 +1,15 @@
+*.log
+.DS_Store
+
+*.jpg
+*.jpeg
+*.png
+
+/vendor/*
+/local/*
+/files/*
+/static/Peter.pdf
+
+*.local
+.env.local
+/config/nginx/local/
