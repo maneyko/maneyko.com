@@ -18,7 +18,7 @@ include __DIR__ . "/header.php";
   <body>
     <style>
       td {
-          border:1px solid #333;
+        border:1px solid #333;
       }
     </style>
     <br />

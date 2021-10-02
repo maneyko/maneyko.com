@@ -1,9 +1,9 @@
 #!/bin/bash
 
-APP_ROOT="${0%/*}/../.."
-APP_ROOT="$(perl -MCwd -e 'print Cwd::abs_path shift' "$APP_ROOT")"
+SCRIPTS_ROOT="${0%/*}/.."
+SCRIPTS_ROOT="$(perl -MCwd -e 'print Cwd::abs_path shift' "$SCRIPTS_ROOT")"
 
-source "$APP_ROOT/scripts/bin/argparse.sh"
+source "$SCRIPTS_ROOT/bin/argparse.sh"
 
 ARG_TYPE='TXT'
 : ${ARG_NAME:='_acme-challenge'}
@@ -31,8 +31,8 @@ if [[ -f "$__DIR__/.env.local" ]]; then
   source "$__DIR__/.env.local"
 fi
 
-if [[ -f "$APP_ROOT/.env.local" ]]; then
-  source "$APP_ROOT/.env.local"
+if [[ -f "$SCRIPTS_ROOT/.env.local" ]]; then
+  source "$SCRIPTS_ROOT/.env.local"
 fi
 
 if [[ -f "$ARG_ENV" ]]; then

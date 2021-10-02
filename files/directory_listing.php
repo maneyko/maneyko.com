@@ -23,10 +23,26 @@ if (is_file("{$_SERVER['DOCUMENT_ROOT']}/favicon.ico"))
 
 EOT;
 ?>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Work+Sans:100,400,700&display=swap">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Work+Sans:100,400,700&display=swap">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4-4.6.0/jq-3.6.0/dt-1.11.3/datatables.min.css"/>
+
     <title><?php echo $PAGE_TITLE; ?></title>
     <style>
+
+      table.dataTable thead .sorting:after,
+      table.dataTable thead .sorting:before,
+      table.dataTable thead .sorting_asc:after,
+      table.dataTable thead .sorting_asc:before,
+      table.dataTable thead .sorting_asc_disabled:after,
+      table.dataTable thead .sorting_asc_disabled:before,
+      table.dataTable thead .sorting_desc:after,
+      table.dataTable thead .sorting_desc:before,
+      table.dataTable thead .sorting_desc_disabled:after,
+      table.dataTable thead .sorting_desc_disabled:before {
+        display: none;
+      }
+
       body {
         margin: 0 auto;
         margin-left: 15px;
@@ -39,9 +55,14 @@ EOT;
         font-size: 300%;
         font-weight: lighter;
       }
-      .table td, .table th {
+
+      table.dataTable thead,
+      table.dataTable th,
+      table.dataTable td {
         vertical-align: middle;
+        word-break: break-all;
       }
+
     </style>
   </head>
   <body>
@@ -63,7 +84,7 @@ EOT;
       <div class="col-lg-1 col-xl-1"></div>
       <div class="col-12 col-sm-12 col-md-12 col-lg-10 col-xl-10">
         <p class="text-center">
-          <table class="table">
+          <table id="dtBasicExample" class="table" style="width:100%">
             <thead>
               <tr>
 <?php
@@ -81,8 +102,8 @@ EOT;
               <tr>
                 <th scope="row">1</th>
                 <td><a href="../">../</td>
-                <td></td>
-                <td></td>
+                <td data-order=""></td>
+                <td data-order=""></td>
               </tr>
 <?php
 function human_filesize($bytes, $decimals = 2) {
@@ -118,8 +139,10 @@ foreach ($all_files as &$filename) {
     if (is_dir($filename)) {
       $filename .= '/';
       $mod_time = '';
+      $mtime    = '';
     } else {
-      $mod_time = strftime('%a %b %d %Y %r %Z', $file_stats['mtime']);
+      $mtime = $file_stats['mtime'];
+      $mod_time = strftime('%a %b %d %Y %r %Z', $mtime);
     }
 
     $fsize = human_filesize($file_stats['size']);
@@ -127,8 +150,8 @@ foreach ($all_files as &$filename) {
               <tr>
                 <th scope="row">$count</th>
                 <td><a href="$filename">$filename</a></td>
-                <td>$fsize</td>
-                <td>$mod_time</td>
+                <td data-order={$file_stats['size']}>$fsize</td>
+                <td data-order={$mtime}>$mod_time</td>
               </tr>
 
 EOT;
@@ -143,5 +166,20 @@ EOT;
       <div class="col-lg-1 col-xl-1"></div>
     </div>  <!-- .row -->
     <!-- The time is <?php echo date("Y-m-d-H:i:s"); ?> -->
+
+    <script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.6.0/jq-3.6.0/dt-1.11.3/datatables.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/js/bootstrap.min.js"></script>
+
+    <script>
+      $(document).ready(function() {
+        $("#dtBasicExample").DataTable({
+          "paging": false,
+          "info": false,
+          "searching": false
+        });
+        // $("#dtBasicExample").DataTable();
+        // $('.dataTables_length').addClass('bs-select');
+      });
+    </script>
   </body>
 </html>
