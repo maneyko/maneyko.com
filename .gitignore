@@ -14,3 +14,6 @@
 *.local
 .env.local
 /config/nginx/local/
+
+node_modules/
+package-lock.json

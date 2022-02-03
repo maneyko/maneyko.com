@@ -25,9 +25,9 @@ include __DIR__ . "/header.php";
     <br />
 <?php
 if (!empty($_GET["name"])) {
-    $name = htmlspecialchars($_GET["name"]);
-    echo <<< EOT
-    <h1>Hello {$name}!</h1>
+  $name = htmlspecialchars($_GET["name"]);
+  echo <<< EOT
+  <h1>Hello {$name}!</h1>
 
 EOT;
 }
@@ -94,12 +94,12 @@ EOT;
     <!-- The time is <?php echo date("Y-m-d-H:i:s"); ?> -->
     <!-- Current PHP version: <?php echo phpversion(); ?> -->
 
-    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 
 
 <?php
 $scripts = array(
-  "https://code.jquery.com/jquery-3.3.1.slim.min.js"                          => "sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo",
+  // "https://code.jquery.com/jquery-3.3.1.slim.min.js"                          => "sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo",
   "https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" => "sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1",
   "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"    => "sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
 );
@@ -122,7 +122,7 @@ EOT;
       });
 
       $('.main-pic').click(function() {
-          $(this).hide();
+        $(this).hide();
       });
     </script>
   </body>

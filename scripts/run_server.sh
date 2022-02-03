@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source "$(dirname "$0")/bin/argparse.sh"
+# Must be in PATH -- https://github.com/maneyko/argparse.sh
+source "argparse.sh"
 
 ARG_PORT=8089
 

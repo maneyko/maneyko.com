@@ -1,6 +1,7 @@
 #!/bin/bash
 
-source "${0%/*}/../bin/argparse.sh"
+# Must be in PATH -- https://github.com/maneyko/argparse.sh
+source "argparse.sh"
 
 arg_boolean "[dry-run] [Dry run attempt. Will add a '_acme-test' DNS record.]"
 arg_help    "[

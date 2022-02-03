@@ -3,7 +3,8 @@
 SCRIPTS_ROOT="${0%/*}/.."
 SCRIPTS_ROOT="$(perl -MCwd -e 'print Cwd::abs_path shift' "$SCRIPTS_ROOT")"
 
-source "$SCRIPTS_ROOT/bin/argparse.sh"
+# Must be in PATH -- https://github.com/maneyko/argparse.sh
+source "argparse.sh"
 
 ARG_TYPE='TXT'
 : ${ARG_NAME:='_acme-challenge'}
