@@ -24,6 +24,7 @@ root_setup() {
     nginx \
     php-common \
     php-fpm \
+    silversearcher-ag \
     vim \
     wget
 
