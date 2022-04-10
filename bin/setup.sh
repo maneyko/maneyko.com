@@ -1,10 +1,16 @@
 #!/bin/bash
 
-cd
+cd "$HOME"
 
 CRONTAB_FILE=$PWD/mycron
 MANEYKO_HOME=/home/maneyko
 MANEYKO_COM=$MANEYKO_COM/www/maneyko.com
+
+main() {
+  root_setup
+  setup_maneyko
+  setup_maneyko_com
+}
 
 root_setup() {
   apt-get update
@@ -98,8 +104,4 @@ EOT
   service nginx restart
 }
 
-main() {
-  root_setup
-  setup_maneyko
-  setup_maneyko_com
-}
+main
