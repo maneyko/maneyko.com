@@ -4,7 +4,7 @@ cd "$HOME"
 
 CRONTAB_FILE=$PWD/mycron
 MANEYKO_HOME=/home/maneyko
-MANEYKO_COM=$MANEYKO_COM/www/maneyko.com
+MANEYKO_COM=$MANEYKO_HOME/www/maneyko.com
 
 main() {
   root_setup
