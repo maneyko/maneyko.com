@@ -77,10 +77,13 @@ EOT
 
 log "$call_info"
 
-last_updated_file="$__DIR__/certbot-last-ran.txt"
-last_updated="$(perl -e "print ((stat('$last_updated_file'))[9])")"
 time_now=$(date +%s)
-: ${last_updated:=$(( $time_now - 600 ))}
+last_updated_file="$__DIR__/certbot-last-ran.txt"
+if [[ -f $last_updated_file ]]; then
+  last_updated="$(perl -e "print ((stat('$last_updated_file'))[9])")"
+else
+  last_updated=$(( $time_now - 600 ))
+fi
 seconds_since_update=$(( $time_now - $last_updated ))
 
 SHOULD_DELETE=true
