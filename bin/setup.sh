@@ -40,6 +40,15 @@ root_setup() {
   ./dotfiles/install.sh
 
   source $HOME/.bashrc
+
+
+  fallocate -l 512M /swapfile
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  cp /etc/fstab /etc/fstab.bak
+  echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab
+
   cat << EOT >> $CRONTAB_FILE
 0 2  *   * * journalctl --vacuum-time=2d
 0 2  *   * * sync && echo 3 > /proc/sys/vm/drop_caches
@@ -68,6 +77,8 @@ setup_maneyko_com() {
   mkdir -p "$MANEYKO_COM"
   cd "$(dirname "$MANEYKO_COM")"
   rm -fr maneyko.com
+
+  usermod -a -G maneyko www-data
 
   git clone https://github.com/maneyko/maneyko.com
 
