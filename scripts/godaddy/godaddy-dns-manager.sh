@@ -7,8 +7,8 @@ SCRIPTS_ROOT="$(perl -MCwd -e 'print Cwd::abs_path shift' "$SCRIPTS_ROOT")"
 source "argparse.sh"
 
 ARG_TYPE='TXT'
-: ${ARG_NAME:='_acme-challenge'}
 ARG_DOMAIN='maneyko.com'
+: ${ARG_NAME:="_acme-challenge.$ARG_DOMAIN"}
 ARG_TTL='3600'
 
 arg_optional "[domain]     [Domain name for which we are updating DNS records. Default: '$ARG_DOMAIN']"
@@ -47,23 +47,18 @@ log() {
 
 : ${ARG_DATA:="$CERTBOT_VALIDATION"}
 
-api_base="https://api.godaddy.com/v1"
+api_base="https://api.cloudflare.com/client/v4"
 
 make_request() {
-  cat << EOT
-Making request to '$@'
-==================================================================================================================
-EOT
   curl -sL \
-  -H "Authorization: sso-key $GODADDY_API_KEY:$GODADDY_API_SECRET" \
-  -H "X-Shopper-Id: $GODADDY_SHOPPER_ID" \
+  -H "Authorization: Bearer $API_TOKEN" \
   -H "Content-Type: application/json" \
   "$@" \
   | jq .
 }
 
 if [[ -n $ARG_READ ]]; then
-  make_request "$api_base/domains/$ARG_DOMAIN/records"
+  make_request "$api_base/zones/$ZONE_ID/dns_records"
   exit 0
 fi
 
@@ -99,34 +94,33 @@ if [[ -z $ARG_DATA ]]; then
   exit 1
 fi
 
-
-read -r -d '' patch_data << EOT
-  [
-    {
-      "data": "$ARG_DATA",
-      "name": "$ARG_NAME",
-      "ttl":  $ARG_TTL,
-      "type": "$ARG_TYPE"
-    }
-  ]
-EOT
-
-res="$(
-  make_request "$api_base/domains/$ARG_DOMAIN/records/$ARG_TYPE/$ARG_NAME"
-)"
-log "$res"
-sleep 1
-
 if [[ -n $SHOULD_DELETE ]]; then
-  res="$(
-    make_request -XDELETE "$api_base/domains/$ARG_DOMAIN/records/$ARG_TYPE/$ARG_NAME"
-  )"
-  log "$res"
-  sleep 1
+  existing_record_ids=($(
+    make_request "$api_base/zones/$ZONE_ID/dns_records?name=$ARG_NAME" \
+      | jq -r '.result[].id'
+  ))
+
+  for record_id in ${existing_record_ids[@]}; do
+    res=$(make_request -XDELETE "$api_base/zones/$ZONE_ID/dns_records/$record_id")
+    log "$res"
+    sleep 1
+  done
 fi
 
-res="$(
-  make_request -XPATCH "$api_base/domains/$ARG_DOMAIN/records" -d "$patch_data"
-)"
+read -r -d '' post_data << EOT
+  {
+    "type": "$ARG_TYPE",
+    "name": "$ARG_NAME",
+    "content": "$ARG_DATA",
+    "ttl":  $ARG_TTL,
+    "zone_id": "$ZONE_ID",
+    "id": "$(openssl rand -hex 16)",
+    "proxied": false
+  }
+EOT
+
+res=$(
+  make_request -XPOST "$api_base/zones/$ZONE_ID/dns_records" -d "$post_data"
+)
 log "$res"
 sleep 20
