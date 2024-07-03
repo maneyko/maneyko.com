@@ -84,6 +84,13 @@ setup_maneyko_com() {
 
   chown -R maneyko:maneyko $MANEYKO_COM
 
+  cd $MANEYKO_COM
+  php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+  php composer-setup.php
+  mv composer.phar /usr/local/bin/composer
+  composer install
+  chown -R maneyko:maneyko vendor/
+
   cd /etc/fail2ban
   ln -s "$MANEYKO_COM/config/fail2ban/jail.local"
 
