@@ -120,6 +120,11 @@ EOT
   crontab $CRONTAB_FILE
   ./certbot-renew-wildcard.sh
   service nginx restart
+
+  # To get certificates for regular websites:
+  #
+  # domain_name="example.com"
+  # certbot --nginx -d $domain_name -d www.$domain_name
 }
 
 main

@@ -9,7 +9,7 @@ source "argparse.sh"
 ARG_TYPE='TXT'
 ARG_DOMAIN='maneyko.com'
 : ${ARG_NAME:="_acme-challenge.$ARG_DOMAIN"}
-ARG_TTL='3600'
+ARG_TTL='1'
 
 arg_optional "[domain]     [Domain name for which we are updating DNS records. Default: '$ARG_DOMAIN']"
 arg_optional '[env]    [e] [Source the specified file which defines environment variables.
