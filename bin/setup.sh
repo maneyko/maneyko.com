@@ -10,6 +10,7 @@ main() {
   root_setup
   setup_maneyko
   setup_maneyko_com
+  setup_xtables
 }
 
 root_setup() {
@@ -125,6 +126,35 @@ EOT
   #
   # domain_name="example.com"
   # certbot --nginx -d $domain_name -d www.$domain_name
+}
+
+# https://gist.github.com/woods/25ef91a95da85bf10974
+# https://docs.rackspace.com/docs/block-ip-range-from-countries-with-geoip-and-iptables#install-xtables-addons
+setup_xtables() {
+  addons_directory=/usr/libexec/xtables-addons
+
+  apt-get install xtables-addons-common libtext-csv-xs-perl linux-headers-$(uname -r)
+
+  # Create the directory where the country data should live
+  mkdir /usr/share/xt_geoip
+
+  # Download and install the latest country data
+  mkdir /tmp/xt_geoip_dl
+  cd /tmp/xt_geoip_dl
+  $addons_directory/xt_geoip_dl
+  $addons_directory/xt_geoip_build -D /usr/share/xt_geoip *.csv
+
+  cat << 'EOT' > $HOME/enable-us-only.sh
+#!/bin/bash
+
+sudo iptables -I INPUT -m geoip ! --src-cc US,ZZ -j DROP
+EOT
+
+  cat << 'EOT' > $HOME/disable-us-only.sh
+#!/bin/bash
+
+sudo iptables -D INPUT -m geoip ! --src-cc US,ZZ -j DROP
+EOT
 }
 
 main
