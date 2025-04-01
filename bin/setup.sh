@@ -149,12 +149,23 @@ setup_xtables() {
 
 sudo iptables -I INPUT -m geoip ! --src-cc US,ZZ -j DROP
 EOT
+  chmod +x $HOME/enable-us-only.sh
 
   cat << 'EOT' > $HOME/disable-us-only.sh
 #!/bin/bash
 
 sudo iptables -D INPUT -m geoip ! --src-cc US,ZZ -j DROP
 EOT
+  chmod +x $HOME/disable-us-only.sh
+
+  # Ensure 'xt_geoip' module gets reinstalled after kernel upgrades
+  cat << 'EOT' >> /etc/kernel/postinst.id/reinstall-geoip
+#!/bin/bash
+
+echo "Reinstalling xt_geoip module after kernel upgrade..."
+apt-get install -y xtables-addons-common libtext-csv-xs-perl linux-headers-$(uname -r)
+EOT
+  chmod +x /etc/kernel/postinst.id/reinstall-geoip
 }
 
 main
