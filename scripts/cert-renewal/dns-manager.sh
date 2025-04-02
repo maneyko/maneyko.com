@@ -7,9 +7,9 @@ SCRIPTS_ROOT="$(perl -MCwd -e 'print Cwd::abs_path shift' "$SCRIPTS_ROOT")"
 source "argparse.sh"
 
 ARG_TYPE='TXT'
-ARG_DOMAIN='maneyko.com'
-: ${ARG_NAME:="_acme-challenge.$ARG_DOMAIN"}
-ARG_TTL='1'
+: ${ARG_DOMAIN:=$CERTBOT_DOMAIN}
+: ${ARG_NAME:="_acme-challenge"}
+: ${ARG_TTL:="1"}
 
 arg_optional "[domain]     [Domain name for which we are updating DNS records. Default: '$ARG_DOMAIN']"
 arg_optional '[env]    [e] [Source the specified file which defines environment variables.
@@ -46,6 +46,7 @@ log() {
 }
 
 : ${ARG_DATA:="$CERTBOT_VALIDATION"}
+DNS_NAME="${ARG_NAME}.$ARG_DOMAIN"
 
 api_base="https://api.cloudflare.com/client/v4"
 
@@ -56,6 +57,17 @@ make_request() {
   "$@" \
   | jq .
 }
+
+find_zone_id() {
+  domain_name=$ARG_DOMAIN
+  domain_name=${domain_name#www.}
+
+  make_request "$api_base/zones/$ZONE_ID/dns_records" \
+    | jq -r ".result | map(select(.name == \"$domain_name\")) | first | .id"
+
+}
+
+: ${ZONE_ID:=$(find_zone_id)}
 
 if [[ -n $ARG_READ ]]; then
   make_request "$api_base/zones/$ZONE_ID/dns_records"
@@ -96,7 +108,7 @@ fi
 
 if [[ -n $SHOULD_DELETE ]]; then
   existing_record_ids=($(
-    make_request "$api_base/zones/$ZONE_ID/dns_records?name=$ARG_NAME" \
+    make_request "$api_base/zones/$ZONE_ID/dns_records?name=$DNS_NAME" \
       | jq -r '.result[].id'
   ))
 
@@ -110,7 +122,7 @@ fi
 read -r -d '' post_data << EOT
   {
     "type": "$ARG_TYPE",
-    "name": "$ARG_NAME",
+    "name": "$DNS_NAME",
     "content": "$ARG_DATA",
     "ttl":  $ARG_TTL,
     "zone_id": "$ZONE_ID",
