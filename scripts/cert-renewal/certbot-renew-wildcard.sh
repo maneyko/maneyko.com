@@ -27,9 +27,9 @@ fi
 DOMAIN1=$ARG_DOMAIN
 
 if [[ -n $ARG_WILDCARD ]]; then
-  DOMAIN2="www.${ARG_DOMAIN}"
-else
   DOMAIN2="*.${ARG_DOMAIN}"
+else
+  DOMAIN2="www.${ARG_DOMAIN}"
 fi
 
 
