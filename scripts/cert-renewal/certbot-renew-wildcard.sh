@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# Must be in PATH -- https://github.com/maneyko/argparse.sh
 source "argparse.sh"
+
+# Crontab entry:
+#  0  5    1   *   *   /bin/bash -l -c '/var/www/maneyko.com/scripts/cert-renewal/certbot-renew-wildcard.sh maneyko.com -w && service nginx restart'
 
 arg_positional "[domain]       [The domain to renew.]"
 arg_boolean    "[wildcard] [w] [Create a wildcard certificate.]"
