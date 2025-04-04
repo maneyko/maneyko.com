@@ -111,12 +111,12 @@ setup_maneyko_com() {
   ln -s $MANEYKO_COM/config/nginx/default
   ln -s $MANEYKO_COM/config/nginx/maneyko.conf
 
-  cp -r $MANEYKO_COM/scripts/godaddy/ $HOME/
-  cd $HOME/godaddy
+  cp -r $MANEYKO_COM/scripts/cert-renewal/ $HOME/
+  cd $HOME/cert-renewal
   rm certbot*.txt
 
   cat << EOT >> "$CRONTAB_FILE"
-0 5  1   1,2,3,4,5,6,7,8,9,10,11,12 * /bin/bash -l -c '$HOME/godaddy/certbot-renew-wildcard.sh && service nginx restart'
+0 5  1   1,2,3,4,5,6,7,8,9,10,11,12 * /bin/bash -l -c '$HOME/cert-renewal/certbot-renew-wildcard.sh && service nginx restart'
 EOT
   crontab $CRONTAB_FILE
   ./certbot-renew-wildcard.sh

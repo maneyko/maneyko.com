@@ -7,6 +7,7 @@ SCRIPTS_ROOT="$(perl -MCwd -e 'print Cwd::abs_path shift' "$SCRIPTS_ROOT")"
 source "argparse.sh"
 
 ARG_TYPE='TXT'
+: ${ARG_DATA:="$CERTBOT_VALIDATION"}
 : ${ARG_DOMAIN:=$CERTBOT_DOMAIN}
 : ${ARG_NAME:="_acme-challenge"}
 : ${ARG_TTL:="1"}
@@ -14,45 +15,69 @@ ARG_TYPE='TXT'
 arg_optional "[domain]     [Domain name for which we are updating DNS records. Default: '$ARG_DOMAIN']"
 arg_optional '[env]    [e] [Source the specified file which defines environment variables.
 Should define:
-    $GODADDY_API_KEY
-    $GODADDY_API_SECRET
-    $GODADDY_SHOPPER_ID]'
+    $CLOUDFLARE_API_TOKEN
+    $CLOUDFLARE_ZONE_ID (optional)
+'
 arg_optional "[type]   [t] [DNS type of record that will be updated. Default: '$ARG_TYPE']"
 arg_optional "[name]   [n] [DNS record name that will be updated. Default: '$ARG_NAME']"
-arg_optional "[data]   [d] [Data to store in the DNS record. Required if not using '-d' flag.]"
+arg_optional "[data]   [d] [Data to store in the DNS record. Required if not using '\$CERTBOT_VALIDATION' is not set.]"
 arg_optional "[ttl]        [TTL for DNS new record. Default: '$ARG_TTL']"
 arg_boolean  "[read]   [r] [Just return DNS records for maneyko.com]"
 
 arg_help "[
-Update DNS $ARG_TYPE record '$ARG_NAME' for '$ARG_DOMAIN' in GoDaddy.
-API documentation: https://developer.godaddy.com/doc/endpoint/domains#/v1/recordAdd]"
+Update DNS $ARG_TYPE record '$ARG_NAME' for '$ARG_DOMAIN' in Cloudflare.
+API documentation: https://developers.cloudflare.com/api/resources/zones/]"
 parse_args
 
-if [[ -f "$__DIR__/.env.local" ]]; then
-  source "$__DIR__/.env.local"
-fi
+main() {
+  source_env_files
+  set_globals
 
-if [[ -f "$SCRIPTS_ROOT/.env.local" ]]; then
-  source "$SCRIPTS_ROOT/.env.local"
-fi
+  if [[ -n $ARG_READ ]]; then
+    make_request "$API_BASE/zones/$CLOUDFLARE_ZONE_ID/dns_records"
+    exit 0
+  fi
 
-if [[ -f "$ARG_ENV" ]]; then
-  source "$ARG_ENV"
-fi
+  log_certbot_env
 
-mkdir -p "$HOME/log"
+  if [[ -z $ARG_DATA ]]; then
+    log 'ERROR: $ARG_DATA is empty.'
+    exit 1
+  fi
+
+  delete_existing_if_necessary
+}
+
+source_env_files() {
+  files=(
+"$__DIR__/.env.local"
+"$SCRIPTS_ROOT/.env.local"
+"$ARG_ENV"
+)
+
+  for f in ${files[@]}; do
+    if [[ -f $f ]]; then
+      source "$f"
+    fi
+  done
+}
+
+set_globals() {
+  DNS_NAME="${ARG_NAME}.$ARG_DOMAIN"
+
+  API_BASE="https://api.cloudflare.com/client/v4"
+
+  : ${CLOUDFLARE_ZONE_ID:=$(find_zone_id)}
+}
+
 log() {
+  mkdir -p "$HOME/log"
   echo "I, [$(date +'%Y-%m-%dT%H:%M:%S%z') #$$]  INFO -- : $@" >> $HOME/log/cron.log
 }
 
-: ${ARG_DATA:="$CERTBOT_VALIDATION"}
-DNS_NAME="${ARG_NAME}.$ARG_DOMAIN"
-
-api_base="https://api.cloudflare.com/client/v4"
-
 make_request() {
   curl -sL \
-  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
   -H "Content-Type: application/json" \
   "$@" \
   | jq .
@@ -62,19 +87,12 @@ find_zone_id() {
   domain_name=$ARG_DOMAIN
   domain_name=${domain_name#www.}
 
-  make_request "$api_base/zones" \
+  make_request "$API_BASE/zones" \
     | jq -r ".result | map(select(.name == \"$domain_name\")) | first | .id"
-
 }
 
-: ${ZONE_ID:=$(find_zone_id)}
-
-if [[ -n $ARG_READ ]]; then
-  make_request "$api_base/zones/$ZONE_ID/dns_records"
-  exit 0
-fi
-
-read -r -d '' call_info << EOT
+log_certbot_env() {
+  read -r -d '' call_info << EOT
 CERTBOT_DOMAIN:               $CERTBOT_DOMAIN
 CERTBOT_VALIDATION:           $CERTBOT_VALIDATION
 CERTBOT_TOKEN:                $CERTBOT_TOKEN
@@ -82,57 +100,48 @@ CERTBOT_REMAINING_CHALLENGES: $CERTBOT_REMAINING_CHALLENGES
 CERTBOT_ALL_DOMAINS:          $CERTBOT_ALL_DOMAINS
 EOT
 
-log "$call_info"
+  log "$call_info"
+}
 
-time_now=$(date +%s)
-last_updated_file="$__DIR__/certbot-last-ran.txt"
-if [[ -f $last_updated_file ]]; then
-  last_updated="$(perl -e "print ((stat('$last_updated_file'))[9])")"
-else
-  last_updated=$(( $time_now - 600 ))
-fi
-seconds_since_update=$(( $time_now - $last_updated ))
+delete_existing_if_necessary() {
+  IFS=$'\r\n' dns_records=($(
+    make_request "$API_BASE/zones/$CLOUDFLARE_ZONE_ID/dns_records?name=$DNS_NAME" \
+      | jq -c '.result[]'
+    ))
 
-SHOULD_DELETE=true
+  # Only delete records that are older than 5 minutes. If a record was created in the last 5 minutes, it means
+  # it was created during the current cert creation run (for another domain under the same cert).
+  for dns_record in ${dns_records[@]}; do
+    last_modified_at=$(echo "$dns_record" | jq -r '.modified_on | sub("\\.[0-9]+"; "") | fromdateiso8601')
 
-if [[ $seconds_since_update -lt 300 ]]; then
-  log "INFO: Updated less than 5 minutes ago"
-  SHOULD_DELETE=
-fi
-date > "$last_updated_file"
-
-if [[ -z $ARG_DATA ]]; then
-  log 'ERROR: $ARG_DATA is empty.'
-  exit 1
-fi
-
-if [[ -n $SHOULD_DELETE ]]; then
-  existing_record_ids=($(
-    make_request "$api_base/zones/$ZONE_ID/dns_records?name=$DNS_NAME" \
-      | jq -r '.result[].id'
-  ))
-
-  for record_id in ${existing_record_ids[@]}; do
-    res=$(make_request -XDELETE "$api_base/zones/$ZONE_ID/dns_records/$record_id")
-    log "$res"
-    sleep 1
+    if [[ $(( $EPOCHSECONDS - $last_modified_at )) -lt 300 ]]; then
+      log "INFO: Updated less than 5 minutes ago, will not delete existing DNS entries"
+    else
+      record_id=$(echo "$dns_record" | jq -r .id)
+      res=$(make_request -XDELETE "$API_BASE/zones/$CLOUDFLARE_ZONE_ID/dns_records/$record_id")
+      log "$res"
+      sleep 1
+    fi
   done
-fi
+}
 
-read -r -d '' post_data << EOT
+create_new_dns_record() {
+  read -r -d '' post_data << EOT
   {
     "type": "$ARG_TYPE",
     "name": "$DNS_NAME",
     "content": "$ARG_DATA",
     "ttl":  $ARG_TTL,
-    "zone_id": "$ZONE_ID",
+    "zone_id": "$CLOUDFLARE_ZONE_ID",
     "id": "$(openssl rand -hex 16)",
     "proxied": false
   }
 EOT
 
-res=$(
-  make_request -XPOST "$api_base/zones/$ZONE_ID/dns_records" -d "$post_data"
-)
-log "$res"
-sleep 20
+  res=$(make_request -XPOST "$API_BASE/zones/$CLOUDFLARE_ZONE_ID/dns_records" -d "$post_data")
+  log "$res"
+
+  sleep 20
+}
+
+main
