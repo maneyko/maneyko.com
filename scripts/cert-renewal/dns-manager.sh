@@ -62,7 +62,7 @@ find_zone_id() {
   domain_name=$ARG_DOMAIN
   domain_name=${domain_name#www.}
 
-  make_request "$api_base/zones/$ZONE_ID/dns_records" \
+  make_request "$api_base/zones" \
     | jq -r ".result | map(select(.name == \"$domain_name\")) | first | .id"
 
 }
