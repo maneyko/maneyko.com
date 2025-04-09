@@ -155,6 +155,9 @@ EOT
 
 sudo iptables -D INPUT -m geoip ! --src-cc US,ZZ -j DROP
 EOT
+
+  # sudo apt-get install iptables-persistent
+  # sudo netfilter-persistent save
 }
 
 main
