@@ -111,12 +111,12 @@ setup_maneyko_com() {
   ln -s $MANEYKO_COM/config/nginx/default
   ln -s $MANEYKO_COM/config/nginx/maneyko.conf
 
-  cp -r $MANEYKO_COM/scripts/godaddy/ $HOME/
-  cd $HOME/godaddy
+  cp -r $MANEYKO_COM/scripts/cert-renewal/ $HOME/
+  cd $HOME/cert-renewal
   rm certbot*.txt
 
   cat << EOT >> "$CRONTAB_FILE"
-0 5  1   1,2,3,4,5,6,7,8,9,10,11,12 * /bin/bash -l -c '$HOME/godaddy/certbot-renew-wildcard.sh && service nginx restart'
+0 5  1   1,2,3,4,5,6,7,8,9,10,11,12 * /bin/bash -l -c '$HOME/cert-renewal/certbot-renew-wildcard.sh && service nginx restart'
 EOT
   crontab $CRONTAB_FILE
   ./certbot-renew-wildcard.sh
@@ -149,6 +149,7 @@ setup_xtables() {
 
 sudo iptables -I INPUT -m geoip ! --src-cc US,ZZ -j DROP
 EOT
+  chmod +x $HOME/enable-us-only.sh
 
   cat << 'EOT' > $HOME/disable-us-only.sh
 #!/bin/bash
@@ -156,8 +157,16 @@ EOT
 sudo iptables -D INPUT -m geoip ! --src-cc US,ZZ -j DROP
 EOT
 
-  # sudo apt-get install iptables-persistent
-  # sudo netfilter-persistent save
+  chmod +x $HOME/disable-us-only.sh
+
+  # Ensure 'xt_geoip' module gets reinstalled after kernel upgrades
+  cat << 'EOT' >> /etc/kernel/postinst.id/reinstall-geoip
+#!/bin/bash
+
+echo "Reinstalling xt_geoip module after kernel upgrade..."
+apt-get install -y xtables-addons-common libtext-csv-xs-perl linux-headers-$(uname -r)
+EOT
+  chmod +x /etc/kernel/postinst.id/reinstall-geoip
 }
 
 main
