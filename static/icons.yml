@@ -1,43 +1,37 @@
 ---
-- 
-  name: "Resume"
+- name: "Resume"
   a_attrs: &default_a_attrs
     class: "a-icon"
     target: "_blank"
-    href: "/static/Peter.pdf"
+    href: "/static/Peter_2025.pdf"
   i_attrs:
     class: "fa-file-text-o"
-- 
-  name: "LinkedIn"
+- name: "LinkedIn"
   a_attrs:
     <<: *default_a_attrs
     href: "https://www.linkedin.com/in/peter-maneykowski"
   i_attrs:
     class: "fa-linkedin linkedin-icon"
-- 
-  name: "Github"
+- name: "Github"
   a_attrs:
     <<: *default_a_attrs
     href: "https://github.com/maneyko"
   i_attrs:
     class: "fa-github-square"
-- 
-  name: "AngelList"
+- name: "AngelList"
   a_attrs:
     <<: *default_a_attrs
     href: "https://angel.co/peter-maneykowski-1"
   i_attrs:
     class: "fa-angellist"
-- 
-  name: "E-mail"
+- name: "E-mail"
   a_attrs:
     <<: *default_a_attrs
     target: "_self"
     href: "mailto:peter.maneykowski@gmail.com"
   i_attrs:
     class: "fa-envelope-o"
-- 
-  name: "Phone"
+- name: "Phone"
   a_attrs:
     <<: *default_a_attrs
     target: "_self"

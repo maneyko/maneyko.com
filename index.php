@@ -1,24 +1,31 @@
 <?php
-require_once __DIR__ . "/vendor/autoload.php";
-use Symfony\Component\Dotenv\Dotenv;
-
-$dotenv = new Dotenv();
 $env_files = array(".env", ".env.local");
 
-foreach($env_files as &$env_file) {
-  if (is_file($env_file))
-    $dotenv->load(__DIR__ . "/$env_file");
+foreach ($env_files as $env_file) {
+  $env_file = __DIR__ . "/$env_file";
+  if (!is_file($env_file)) continue;
+  $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+  foreach ($lines as $line) {
+    $line = trim($line);
+    if ($line === "" || str_starts_with($line, "#")) continue;
+
+    [$name, $value] = array_pad(explode("=", $line, 2), 2, "");
+    putenv("$name=$value");
+    $_ENV[$name] = $_SERVER[$name] = $value;
+  }
 }
 ?>
 <!DOCTYPE html>
 <html>
-<?php
-include __DIR__ . "/header.php";
-?>
+<?php include __DIR__ . "/header.php"; ?>
   <body>
     <style>
       td {
         border:1px solid #333;
+      }
+      h1 {
+        font-weight: lighter;
       }
     </style>
     <br />
@@ -60,9 +67,15 @@ EOT;
     <div class="row">
 
 <?php
+/*
+require_once __DIR__ . "/vendor/autoload.php";
 use Symfony\Component\Yaml\Yaml;
-
 $icons = Yaml::parseFile(__DIR__ . "/static/icons.yml");
+*/
+
+// sudo apt-get install -y yq
+$icons_json = shell_exec("yq --output-format=json . " . __DIR__ . "/static/icons.yml");
+$icons = json_decode($icons_json, true);
 
 foreach($icons as &$icon) {
   $a_tag = "<a";
