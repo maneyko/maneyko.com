@@ -105,8 +105,6 @@ find_zone_id() {
     | jq -r ".result | map(select(.name == \"$domain_name\"))[0].id"
 }
 
-flatten_json() { cat | perl -pe 's/^\s*//g; s/\n/ /g' ; }
-
 log_certbot_env() {
   call_info=$(cat << EOT
 CERTBOT_DOMAIN:               $CERTBOT_DOMAIN
@@ -124,14 +122,11 @@ EOT
 }
 
 delete_existing_if_necessary() {
-  IFS=$'\r\n' dns_records=($(
-    make_request "$API_BASE/zones/$CLOUDFLARE_ZONE_ID/dns_records?name=$DNS_NAME" \
-      | jq -c '.result[]'
-    ))
+  dns_records=$(make_request "$API_BASE/zones/$CLOUDFLARE_ZONE_ID/dns_records?name=$DNS_NAME" | jq -c '.result[]')
 
   # Only delete records that are older than N minutes. If a record was created in the last N minutes, it means
   # it was created during the current cert creation run (for another domain under the same cert).
-  for dns_record in ${dns_records[@]}; do
+  while IFS= read -r dns_record; do
     last_modified_at=$(echo "$dns_record" | jq -r '.modified_on | sub("\\.[0-9]+"; "") | fromdateiso8601')
 
     if [[ -z $ARG_DELETE && $(( $EPOCHSECONDS - $last_modified_at )) -lt $(( $EXISTING_RECORD_EXPIRATION_MINUTES * 60 )) ]]; then
@@ -143,10 +138,10 @@ delete_existing_if_necessary() {
       log "DELETE $endpoint"
       res=$(make_request -XDELETE "$endpoint")
 
-      log "Response: $(echo "$res" | flatten_json)"
+      log "Response: $(echo "$res" | jq -c)"
       sleep 1
     fi
-  done
+  done <<< "$dns_records"
 }
 
 create_new_dns_record() {
@@ -171,10 +166,10 @@ create_new_dns_record() {
   endpoint="$API_BASE/zones/$CLOUDFLARE_ZONE_ID/dns_records"
 
   log "POST $endpoint"
-  log "Body: $(echo "$post_data" | flatten_json)"
+  log "Body: $(echo "$post_data" | jq -c)"
 
   res=$(make_request -XPOST "$endpoint" -d "$post_data")
-  log "Response: $(echo "$res" | flatten_json)"
+  log "Response: $(echo "$res" | jq -c)"
 }
 
 main

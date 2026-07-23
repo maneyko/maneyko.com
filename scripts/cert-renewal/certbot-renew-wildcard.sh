@@ -42,5 +42,7 @@ certbot certonly \
   --force-renewal \
   --manual-auth-hook "$__DIR__"/dns-manager.sh \
   --preferred-challenges dns-01 \
+  -n \
+  --agree-tos \
   -d "$DOMAIN1" \
   -d "$DOMAIN2"
