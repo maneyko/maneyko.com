@@ -1,0 +1,4 @@
+# Read by the nginx_site Ansible role after cloning. Not served: the NGINX
+# config denies /config to HTTP clients.
+dns: cloudflare
+subdomains: ["*.maneyko.com"]
