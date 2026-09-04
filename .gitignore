@@ -5,7 +5,6 @@
 *.jpeg
 *.png
 
-/vendor/*
 /local/*
 /files/*
 /private/*

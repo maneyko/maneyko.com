@@ -67,12 +67,6 @@ EOT;
     <div class="row">
 
 <?php
-/*
-require_once __DIR__ . "/vendor/autoload.php";
-use Symfony\Component\Yaml\Yaml;
-$icons = Yaml::parseFile(__DIR__ . "/static/icons.yml");
-*/
-
 // sudo apt-get install -y yq
 $icons_json = shell_exec("yq --output-format=json . " . __DIR__ . "/static/icons.yml");
 $icons = json_decode($icons_json, true);
