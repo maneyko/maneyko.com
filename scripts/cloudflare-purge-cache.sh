@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "/home/maneyko/secrets/cloudflare.env"
+set -eu
 
 make_request() {
   curl -sL \
